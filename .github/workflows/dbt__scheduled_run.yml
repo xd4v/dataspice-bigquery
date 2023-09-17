@@ -1,0 +1,55 @@
+
+name: dbt__scheduled_run
+
+on:
+  schedule:
+    - cron:  '0 5 * * *'
+  push:
+      branches:
+      - main
+env:
+  DBT_PROFILES_DIR: ./_profiles
+
+  DBT_GOOGLE_PROJECT_PROD: ${{ secrets.DBT_GOOGLE_PROJECT_PROD }}
+  DBT_GOOGLE_BIGQUERY_DATASET_PROD: ${{ secrets.DBT_GOOGLE_BIGQUERY_DATASET_PROD }}
+  # The DBT_GOOGLE_BIGQUERY_KEYFILE_PROD secret will be written to a json file below
+  DBT_GOOGLE_BIGQUERY_KEYFILE_PROD: ./dbt-service-account.json
+
+jobs:
+  pr_to_main:
+    name: pr_to_main
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./transform
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Authenticate using service account
+        run: 'echo "$KEYFILE" > ./dbt-service-account.json'
+        shell: bash
+        env:
+          KEYFILE: ${{secrets.DBT_GOOGLE_BIGQUERY_KEYFILE_DEV}}
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Test connection
+        run: dbt debug
+
+      - name: Install dbt dependencies
+        run: dbt deps
+
+      # Add dbt seed or other commands here if needed
+      - name: Run dbt models
+        run: dbt run --target dev
+
+      - name: Test dbt models
+        run: dbt test --target dev
