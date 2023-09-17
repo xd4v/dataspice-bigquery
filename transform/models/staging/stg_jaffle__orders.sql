@@ -1,7 +1,7 @@
 with
 
 source as (
-    select * {{ source('jaffle_shop', 'orders') }}
+    select * from {{ source('jaffle_shop', 'orders') }}
 ),
 
 renamed as (
