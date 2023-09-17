@@ -1,29 +1,15 @@
 
-with customers as (
+with
 
-    select
-        id as customer_id,
-        first_name,
-        last_name
-
-    from `dbt-tutorial`.jaffle_shop.customers
-
+customers as (
+    select * from {{ ref('stg_jaffle__customers') }}
 ),
 
 orders as (
-
-    select
-        id as order_id,
-        user_id as customer_id,
-        order_date,
-        status
-
-    from `dbt-tutorial`.jaffle_shop.orders
-
+    select * from {{ ref('stg_jaffle__orders') }}
 ),
 
 customer_orders as (
-
     select
         customer_id,
 
@@ -34,11 +20,9 @@ customer_orders as (
     from orders
 
     group by 1
-
 ),
 
 final as (
-
     select
         customers.customer_id,
         customers.first_name,
@@ -49,8 +33,8 @@ final as (
 
     from customers
 
-    left join customer_orders using (customer_id)
-
+    left join customer_orders
+        on customers.customer_id = customer_orders.customer_id
 )
 
 select * from final
